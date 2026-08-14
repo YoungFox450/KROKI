@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "661172740060",
+    "project_id": "kroki-92410",
+    "storage_bucket": "kroki-92410.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661172740060:android:824a008c0d5f01f9d2f919",
+        "android_client_info": {
+          "package_name": "com.noxstudio.kroki"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3Wa-v33Bv7uEvjd2p2fJvmaVOf94KKbA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
