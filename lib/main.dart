@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'features/auth/login_screen.dart';
+import 'features/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,31 +38,7 @@ class KrokiApp extends StatelessWidget {
           }
 
           if (snapshot.hasData) {
-            // L'utilisateur est connecté ! (Écran d'accueil temporaire)
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text('KROKI - Accueil'),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.logout),
-                    onPressed: () => FirebaseAuth.instance.signOut(),
-                  ),
-                ],
-              ),
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Bienvenue, ${snapshot.data?.email ?? "Joueur"} !',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('Prêt à dessiner et deviner ?'),
-                  ],
-                ),
-              ),
-            );
+            return const HomeScreen();
           }
 
           // Sinon, on affiche la page de connexion
