@@ -15,11 +15,16 @@ class DrawingService {
     return _db.ref('strokes/$roomCode').onValue.map((event) {
       if (event.snapshot.value == null) return [];
 
-      final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+      final value = event.snapshot.value;
+      if (value is! Map) return [];
+
+      final data = Map<String, dynamic>.from(value);
       List<DrawingStroke> strokes = [];
 
-      data.forEach((key, value) {
-        strokes.add(DrawingStroke.fromMap(Map<String, dynamic>.from(value)));
+      data.forEach((key, val) {
+        if (val is Map) {
+          strokes.add(DrawingStroke.fromMap(Map<String, dynamic>.from(val)));
+        }
       });
 
       return strokes;

@@ -1,71 +1,78 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/drawing_stroke.dart';
 
-class DrawingCanvas extends StatelessWidget {
+class DrawingCanvas extends StatefulWidget {
   final List<DrawingStroke> strokes;
   final bool isDrawer;
   final Function(DrawingStroke)? onStrokeCompleted;
+  final Color selectedColor;
+  final double selectedWidth;
 
   const DrawingCanvas({
     super.key,
     required this.strokes,
     required this.isDrawer,
     this.onStrokeCompleted,
+    this.selectedColor = Colors.white,
+    this.selectedWidth = 4.0,
   });
 
   @override
-  Widget build(BuildContext context) {
-    List<DrawingPoint> currentPoints = [];
+  State<DrawingCanvas> createState() => _DrawingCanvasState();
+}
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return GestureDetector(
-          onPanStart: isDrawer
-              ? (details) {
-            setState(() {
-              currentPoints = [
-                DrawingPoint(
-                  x: details.localPosition.dx,
-                  y: details.localPosition.dy,
-                )
-              ];
-            });
-          }
-              : null,
-          onPanUpdate: isDrawer
-              ? (details) {
-            setState(() {
-              currentPoints.add(
-                DrawingPoint(
-                  x: details.localPosition.dx,
-                  y: details.localPosition.dy,
-                ),
-              );
-            });
-          }
-              : null,
-          onPanEnd: isDrawer
-              ? (details) {
-            if (currentPoints.isNotEmpty) {
-              final stroke = DrawingStroke(
-                points: List.from(currentPoints),
-                colorHex: Colors.deepPurpleAccent.value,
-                strokeWidth: 4.0,
-              );
-              onStrokeCompleted?.call(stroke);
-              setState(() => currentPoints.clear());
+class _DrawingCanvasState extends State<DrawingCanvas> {
+  List<DrawingPoint> currentPoints = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanStart: widget.isDrawer
+          ? (details) {
+              setState(() {
+                currentPoints = [
+                  DrawingPoint(
+                    x: details.localPosition.dx,
+                    y: details.localPosition.dy,
+                  )
+                ];
+              });
             }
-          }
-              : null,
-          child: CustomPaint(
-            painter: CanvasPainter(
-              strokes: strokes,
-              currentPoints: currentPoints,
-            ),
-            size: Size.infinite,
-          ),
-        );
-      },
+          : null,
+      onPanUpdate: widget.isDrawer
+          ? (details) {
+              setState(() {
+                currentPoints.add(
+                  DrawingPoint(
+                    x: details.localPosition.dx,
+                    y: details.localPosition.dy,
+                  ),
+                );
+              });
+            }
+          : null,
+      onPanEnd: widget.isDrawer
+          ? (details) {
+              if (currentPoints.isNotEmpty) {
+                final stroke = DrawingStroke(
+                  points: List.from(currentPoints),
+                  colorHex: widget.selectedColor.value,
+                  strokeWidth: widget.selectedWidth,
+                );
+                widget.onStrokeCompleted?.call(stroke);
+                setState(() => currentPoints.clear());
+              }
+            }
+          : null,
+      child: CustomPaint(
+        painter: CanvasPainter(
+          strokes: widget.strokes,
+          currentPoints: currentPoints,
+          currentColor: widget.selectedColor,
+          currentWidth: widget.selectedWidth,
+        ),
+        size: Size.infinite,
+      ),
     );
   }
 }
@@ -73,8 +80,15 @@ class DrawingCanvas extends StatelessWidget {
 class CanvasPainter extends CustomPainter {
   final List<DrawingStroke> strokes;
   final List<DrawingPoint> currentPoints;
+  final Color currentColor;
+  final double currentWidth;
 
-  CanvasPainter({required this.strokes, required this.currentPoints});
+  CanvasPainter({
+    required this.strokes,
+    required this.currentPoints,
+    required this.currentColor,
+    required this.currentWidth,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -83,6 +97,7 @@ class CanvasPainter extends CustomPainter {
       final paint = Paint()
         ..color = Color(stroke.colorHex)
         ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
         ..strokeWidth = stroke.strokeWidth;
 
       for (int i = 0; i < stroke.points.length - 1; i++) {
@@ -97,9 +112,10 @@ class CanvasPainter extends CustomPainter {
     // Dessiner le trait en cours de tracé par le dessinateur
     if (currentPoints.length > 1) {
       final paint = Paint()
-        ..color = Colors.deepPurpleAccent
+        ..color = currentColor
         ..strokeCap = StrokeCap.round
-        ..strokeWidth = 4.0;
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = currentWidth;
 
       for (int i = 0; i < currentPoints.length - 1; i++) {
         canvas.drawLine(

@@ -34,10 +34,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (error == null && mounted) {
-      Navigator.pop(context); // Retour à l'écran de connexion / accueil
+      Navigator.pop(context);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error!), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(error!),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -45,57 +49,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Créer un compte KROKI')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: _pseudoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Pseudo dans le jeu',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+      appBar: AppBar(
+        title: const Text('CRÉER UN COMPTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Hero(
+                    tag: 'app_logo',
+                    child: Icon(Icons.palette_rounded, size: 80, color: Color(0xFF7C4DFF)),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'E-mail',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Mot de passe',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _register,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurpleAccent,
-                      foregroundColor: Colors.white,
+                  const SizedBox(height: 40),
+                  TextField(
+                    controller: _pseudoController,
+                    decoration: const InputDecoration(
+                      hintText: 'Pseudo',
+                      prefixIcon: Icon(Icons.person_outline_rounded),
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Créer mon compte', style: TextStyle(fontSize: 18)),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      hintText: 'Mot de passe',
+                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _register,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text("S'INSCRIRE"),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

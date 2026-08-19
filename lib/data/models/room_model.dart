@@ -33,16 +33,20 @@ class PlayerModel {
 class RoomModel {
   final String code;
   final String hostId;
-  final String status; // "lobby", "playing", "finished"
+  final String status; // "lobby", "active", "intermission", "ended", "closed"
   final int currentRound;
   final int maxRounds;
+  final String? currentWord;
+  final String? drawerUid;
 
   RoomModel({
     required this.code,
     required this.hostId,
     this.status = "lobby",
     this.currentRound = 0,
-    this.maxRounds = 6,
+    this.maxRounds = 3,
+    this.currentWord,
+    this.drawerUid,
   });
 
   Map<String, dynamic> toMap() {
@@ -52,6 +56,8 @@ class RoomModel {
       'status': status,
       'currentRound': currentRound,
       'maxRounds': maxRounds,
+      'currentWord': currentWord,
+      'drawerUid': drawerUid,
     };
   }
 
@@ -61,7 +67,9 @@ class RoomModel {
       hostId: map['hostId'] ?? '',
       status: map['status'] ?? 'lobby',
       currentRound: map['currentRound'] ?? 0,
-      maxRounds: map['maxRounds'] ?? 6,
+      maxRounds: map['maxRounds'] ?? 3,
+      currentWord: map['currentWord'],
+      drawerUid: map['drawerUid'],
     );
   }
 }

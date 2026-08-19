@@ -28,11 +28,16 @@ class ChatService {
     return _db.ref('chats/$roomCode').onValue.map((event) {
       if (event.snapshot.value == null) return [];
 
-      final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+      final value = event.snapshot.value;
+      if (value is! Map) return [];
+
+      final data = Map<String, dynamic>.from(value);
       List<ChatMessage> messages = [];
 
-      data.forEach((key, value) {
-        messages.add(ChatMessage.fromMap(Map<String, dynamic>.from(value)));
+      data.forEach((key, val) {
+        if (val is Map) {
+          messages.add(ChatMessage.fromMap(Map<String, dynamic>.from(val)));
+        }
       });
 
       // Trier par ordre chronologique

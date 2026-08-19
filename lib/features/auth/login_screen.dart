@@ -32,7 +32,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -40,65 +44,87 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.brush, size: 80, color: Colors.deepPurpleAccent),
-                const SizedBox(height: 16),
-                const Text(
-                  'KROKI',
-                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, letterSpacing: 2),
-                ),
-                const SizedBox(height: 32),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'E-mail',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Hero(
+                    tag: 'app_logo',
+                    child: Icon(Icons.brush_rounded, size: 100, color: Color(0xFF7C4DFF)),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Mot de passe',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                  const SizedBox(height: 20),
+                  Text(
+                    'KROKI',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 4,
+                          color: Colors.white,
+                        ),
                   ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurpleAccent,
-                      foregroundColor: Colors.white,
+                  const SizedBox(height: 10),
+                  Text(
+                    'Dessinez. Devinez. Gagnez.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                  ),
+                  const SizedBox(height: 50),
+                  TextField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: Icon(Icons.email_outlined),
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Se connecter', style: TextStyle(fontSize: 18)),
+                    keyboardType: TextInputType.emailAddress,
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    );
-                  },
-                  child: const Text("Pas encore de compte ? S'inscrire"),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      hintText: 'Mot de passe',
+                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text('SE CONNECTER'),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      );
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        text: "Pas encore de compte ? ",
+                        style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                        children: const [
+                          TextSpan(
+                            text: "S'inscrire",
+                            style: TextStyle(color: Color(0xFF7C4DFF), fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

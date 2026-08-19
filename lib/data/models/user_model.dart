@@ -4,6 +4,7 @@ class UserModel {
   final String pseudo;
   final int totalScore;
   final int gamesPlayed;
+  final bool isOnline;
   final DateTime createdAt;
 
   UserModel({
@@ -12,6 +13,7 @@ class UserModel {
     required this.pseudo,
     this.totalScore = 0,
     this.gamesPlayed = 0,
+    this.isOnline = false,
     required this.createdAt,
   });
 
@@ -22,6 +24,7 @@ class UserModel {
       'pseudo': pseudo,
       'totalScore': totalScore,
       'gamesPlayed': gamesPlayed,
+      'isOnline': isOnline,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -33,6 +36,7 @@ class UserModel {
       pseudo: map['pseudo'] ?? 'Joueur',
       totalScore: map['totalScore'] ?? 0,
       gamesPlayed: map['gamesPlayed'] ?? 0,
+      isOnline: map['isOnline'] ?? false,
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'])
           : DateTime.now(),

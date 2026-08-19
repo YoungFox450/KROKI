@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/room_model.dart';
+import 'word_service.dart';
 
 class RoomService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -88,10 +89,29 @@ class RoomService {
     }
   }
 
-  // Démarrer la partie (Passer du statut 'lobby' à 'playing')
-  Future<void> startGame(String roomCode) async {
+  // Démarrer la partie (Passer du statut 'lobby' à 'intermission' avec un cooldown de 30s)
+  Future<void> startGame(String roomCode, {int maxRounds = 3}) async {
+    DocumentSnapshot roomDoc = await _firestore.collection('rooms').doc(roomCode).get();
+    var data = roomDoc.data() as Map<String, dynamic>;
+    String hostId = data['hostId'];
+
     await _firestore.collection('rooms').doc(roomCode).update({
-      'status': 'playing',
+      'status': 'intermission', // Phase de préparation avant la manche 1
+      'cooldownLeft': 30,       // 30 secondes de cooldown avant la 1ère manche
+      'currentWord': WordService.getRandomWord().toUpperCase(),
+      'drawerUid': hostId,
+      'currentTurn': 1,
+      'currentRound': 1,
+      'timeLeft': 60,
+      'guessedPlayers': [],
+      'maxRounds': maxRounds,
+    });
+  }
+
+  // Mettre à jour le nombre maximum de tours dans le lobby
+  Future<void> updateMaxRounds(String roomCode, int maxRounds) async {
+    await _firestore.collection('rooms').doc(roomCode).update({
+      'maxRounds': maxRounds,
     });
   }
 }

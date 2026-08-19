@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class DrawingPoint {
   final double x;
   final double y;
