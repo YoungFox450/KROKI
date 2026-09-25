@@ -4,11 +4,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'word_service.dart';
 import 'drawing_service.dart';
+import 'season_service.dart';
+import 'community_word_service.dart';
 
 class GameLogicService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final DrawingService _drawingService = DrawingService();
+  final DrawingService _drawingService;
+  final SeasonService _seasonService;
+  final CommunityWordService _communityWords;
   Timer? _timer;
+
+  GameLogicService({
+    required DrawingService drawingService,
+    SeasonService? seasonService,
+    CommunityWordService? communityWords,
+  })  : _drawingService = drawingService,
+        _seasonService = seasonService ?? SeasonService(),
+        _communityWords = communityWords ?? CommunityWordService();
 
   void startTimer(String roomCode) {
     _timer?.cancel();
@@ -63,7 +75,11 @@ class GameLogicService {
     required String playerUid,
     required int timeLeft,
   }) async {
-    int secondsElapsed = (60 - timeLeft).clamp(0, 60);
+    final roomRef = _firestore.collection('rooms').doc(roomCode);
+    final roomSnap = await roomRef.get();
+    final roomData = roomSnap.data() ?? <String, dynamic>{};
+    final roundDuration = roomData['gameMode'] == 'blitz' ? 30 : 60;
+    int secondsElapsed = (roundDuration - timeLeft).clamp(0, roundDuration).toInt();
     int intervalsPassed = secondsElapsed ~/ 8;
 
     double basePoints = 100.0;
@@ -90,8 +106,7 @@ class GameLogicService {
     });
 
     // 2. Créditer le dessinateur de +2 pts
-    var roomSnap = await _firestore.collection('rooms').doc(roomCode).get();
-    String? drawerUid = roomSnap.data()?['drawerUid'];
+    String? drawerUid = roomData['drawerUid'];
 
     if (drawerUid != null && drawerUid != playerUid) {
       await _firestore
@@ -109,7 +124,8 @@ class GameLogicService {
         .collection('players')
         .get();
 
-    List<String> guessedPlayers = List<String>.from(roomSnap.data()?['guessedPlayers'] ?? []);
+    final guessedPlayers = List<String>.from(roomData['guessedPlayers'] ?? <dynamic>[])
+      ..add(playerUid);
     int totalPlayers = playersSnap.docs.length;
 
     if (guessedPlayers.length >= totalPlayers - 1) {
@@ -148,6 +164,7 @@ class GameLogicService {
         if (matchScore > 0) {
           await _firestore.collection('users').doc(playerDoc.id).set({
             'totalScore': FieldValue.increment(matchScore),
+            'seasonScores.${_seasonService.currentSeasonId}': FieldValue.increment(matchScore),
           }, SetOptions(merge: true));
         }
       }
@@ -156,7 +173,13 @@ class GameLogicService {
 
     int nextDrawerIndex = (currentTurn - 1) % totalPlayers;
     String nextDrawerUid = players[nextDrawerIndex].id;
-    String nextWord = WordService.getRandomWord();
+    String nextWord;
+    if (roomData['wordTheme'] == 'community') {
+      nextWord = await _communityWords.randomWord(locale: roomData['wordLocale'] ?? 'fr') ??
+          WordService.getRandomWord(locale: roomData['wordLocale'] ?? 'fr', theme: 'mix');
+    } else {
+      nextWord = WordService.getRandomWord(locale: roomData['wordLocale'] ?? 'fr', theme: roomData['wordTheme'] ?? 'mix');
+    }
 
     await roomRef.update({
       'status': 'intermission',
@@ -173,17 +196,19 @@ class GameLogicService {
     }
   }
 
-  // Démarrer un tour de jeu (60 secondes)
+  // Démarrer un tour de jeu (60 secondes ou 30s en mode Blitz)
   Future<void> startRound(String roomCode) async {
     await _drawingService.clearCanvas(roomCode);
     var roomRef = _firestore.collection('rooms').doc(roomCode);
+    var roomSnap = await roomRef.get();
+    var roomData = roomSnap.data() ?? <String, dynamic>{};
+    final gameDuration = (roomData['gameMode'] ?? 'classic') == 'blitz' ? 30 : 60;
     await roomRef.update({
       'status': 'active',
-      'timeLeft': 60,
+      'timeLeft': gameDuration,
     });
 
-    var roomSnap = await roomRef.get();
-    if (FirebaseAuth.instance.currentUser?.uid == roomSnap.data()?['hostId']) {
+    if (FirebaseAuth.instance.currentUser?.uid == roomData['hostId']) {
       startTimer(roomCode);
     }
   }
@@ -204,5 +229,9 @@ class GameLogicService {
 
   void stopTimer() {
     _timer?.cancel();
+  }
+
+  void dispose() {
+    stopTimer();
   }
 }

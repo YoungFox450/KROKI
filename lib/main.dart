@@ -1,18 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
-import 'features/auth/login_screen.dart';
-import 'features/home/home_screen.dart';
 import 'core/settings_provider.dart';
+import 'core/app_error_handler.dart';
+import 'core/router/app_router.dart';
+import 'data/services/notification_service.dart';
+
+late final GoRouter appRouter;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppErrorHandler.install();
+  ErrorWidget.builder = (details) => AppErrorHandler.errorScreen(
+        details.exception,
+        details.stack ?? StackTrace.current,
+      );
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  try {
+    await NotificationService().initialize();
+  } catch (_) {
+    // Les plateformes sans support FCM continuent de fonctionner en mode local.
+  }
+  appRouter = createAppRouter();
   runApp(
     const ProviderScope(
       child: KrokiAppMain(),
@@ -27,9 +41,10 @@ class KrokiAppMain extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'KROKI',
       debugShowCheckedModeBanner: false,
+      routerConfig: appRouter,
       themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
@@ -43,10 +58,12 @@ class KrokiAppMain extends ConsumerWidget {
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0B0B0F),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF7C4DFF),
           brightness: Brightness.dark,
-          surface: const Color(0xFF121212),
+          surface: const Color(0xFF15151B),
+          onSurface: Colors.white,
         ),
         textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
         inputDecorationTheme: InputDecorationTheme(
@@ -78,22 +95,7 @@ class KrokiAppMain extends ConsumerWidget {
             textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
-      ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          if (snapshot.hasData) {
-            return const HomeScreen();
-          }
-
-          return const LoginScreen();
-        },
+        tooltipTheme: const TooltipThemeData(waitDuration: Duration(milliseconds: 500)),
       ),
     );
   }

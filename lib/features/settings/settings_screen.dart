@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/settings_provider.dart';
-import 'terms_of_use_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -35,6 +35,22 @@ class SettingsScreen extends ConsumerWidget {
             (v) => notifier.toggleNotifications(v),
           ),
           const SizedBox(height: 24),
+          _buildSectionHeader('ACCESSIBILITÉ & ERGONOMIE'),
+          _buildSettingSwitch(
+            'Mode daltonien',
+            'Palette de dessin universelle à contraste élevé',
+            Icons.remove_red_eye_rounded,
+            settings.colorblindMode,
+            (v) => notifier.toggleColorblindMode(v),
+          ),
+          _buildSettingSwitch(
+            'Retours haptiques',
+            'Vibrations légères lors des actions de jeu',
+            Icons.vibration_rounded,
+            settings.hapticEnabled,
+            (v) => notifier.toggleHaptic(v),
+          ),
+          const SizedBox(height: 24),
           _buildSectionHeader('APPARENCE'),
           _buildSettingSwitch(
             'Mode sombre',
@@ -42,6 +58,14 @@ class SettingsScreen extends ConsumerWidget {
             Icons.dark_mode_rounded,
             settings.darkMode,
             (v) => notifier.toggleDarkMode(v),
+          ),
+          const SizedBox(height: 24),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.palette_outlined, color: Colors.amber),
+            title: const Text('Cosmétiques', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Pinceaux, couleurs et avatars'),
+            onTap: () => context.push('/cosmetics'),
           ),
           const SizedBox(height: 24),
           _buildSectionHeader('À PROPOS'),
@@ -52,12 +76,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: const Text('1.0.0', style: TextStyle(color: Colors.white38)),
           ),
           ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TermsOfUseScreen()),
-              );
-            },
+            onTap: () => context.push('/terms'),
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.description_outlined, color: Colors.white38),
             title: const Text('Conditions d\'utilisation', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -90,7 +109,7 @@ class SettingsScreen extends ConsumerWidget {
           title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.white38)),
           value: value,
-          activeColor: const Color(0xFF7C4DFF),
+          activeThumbColor: const Color(0xFF7C4DFF),
           onChanged: onChanged,
         ),
       ),

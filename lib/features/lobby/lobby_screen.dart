@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/room_model.dart';
-import '../../data/services/room_service.dart';
-import '../game/game_screen.dart';
+import '../../core/providers/service_providers.dart';
 
-class LobbyScreen extends StatefulWidget {
+class LobbyScreen extends ConsumerStatefulWidget {
   final String roomCode;
   final bool isHost;
 
@@ -18,9 +19,12 @@ class LobbyScreen extends StatefulWidget {
   State<LobbyScreen> createState() => _LobbyScreenState();
 }
 
-class _LobbyScreenState extends State<LobbyScreen> {
+class _LobbyScreenState extends ConsumerState<LobbyScreen> {
   bool _isNavigating = false;
   int _selectedRounds = 3;
+  String _selectedLocale = 'fr';
+  String _selectedTheme = 'mix';
+  String _selectedMode = 'classic';
 
   Stream<List<PlayerModel>> _getPlayers() {
     return FirebaseFirestore.instance
@@ -43,16 +47,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
           if (roomData['status'] == 'intermission' && !_isNavigating) {
             _isNavigating = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => GameScreen(roomCode: widget.roomCode, isHost: widget.isHost),
-                ),
-              );
+              context.go('/game/${widget.roomCode}?host=${widget.isHost}');
             });
           }
 
           _selectedRounds = roomData['maxRounds'] ?? 3;
+          _selectedLocale = roomData['wordLocale'] ?? 'fr';
+          _selectedTheme = roomData['wordTheme'] ?? 'mix';
+          _selectedMode = roomData['gameMode'] ?? 'classic';
         }
 
         return Scaffold(
@@ -128,6 +130,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       ],
                     ),
                   ),
+
+                const SizedBox(height: 12),
+                _buildWordPackPicker(),
+                const SizedBox(height: 12),
+                _buildGameModePicker(),
                 
                 const SizedBox(height: 30),
                 const Align(
@@ -186,7 +193,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 const SizedBox(height: 20),
                 if (widget.isHost)
                   ElevatedButton(
-                    onPressed: () => RoomService().startGame(widget.roomCode, maxRounds: _selectedRounds),
+                  onPressed: () => ref.read(roomServiceProvider).startGame(widget.roomCode, maxRounds: _selectedRounds),
                     child: const Text('LANCER LA PARTIE'),
                   )
                 else
@@ -209,7 +216,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   Widget _roundButton(int value) {
     bool isSelected = _selectedRounds == value;
     return GestureDetector(
-      onTap: () => RoomService().updateMaxRounds(widget.roomCode, value),
+      onTap: () => ref.read(roomServiceProvider).updateMaxRounds(widget.roomCode, value),
       child: Container(
         margin: const EdgeInsets.only(left: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -223,6 +230,99 @@ class _LobbyScreenState extends State<LobbyScreen> {
             fontWeight: FontWeight.bold,
             color: isSelected ? Colors.white : Colors.white60,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWordPackPicker() {
+    return Semantics(
+      container: true,
+      label: 'Pack de mots',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            const Expanded(child: Text('Mots de la partie', style: TextStyle(fontWeight: FontWeight.bold))),
+            if (widget.isHost) ...[
+              DropdownButton<String>(
+                value: _selectedLocale,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: 'fr', child: Text('FR')),
+                  DropdownMenuItem(value: 'ln', child: Text('LIN')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedLocale = value);
+                  ref.read(roomServiceProvider).updateWordPack(
+                        widget.roomCode,
+                        locale: value,
+                        theme: _selectedTheme,
+                      );
+                },
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<String>(
+                value: _selectedTheme,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: 'mix', child: Text('Mix')),
+                  DropdownMenuItem(value: 'kin', child: Text('Kinshasa')),
+                  DropdownMenuItem(value: 'animaux', child: Text('Animaux')),
+                  DropdownMenuItem(value: 'objets', child: Text('Objets')),
+                  DropdownMenuItem(value: 'community', child: Text('Communauté')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedTheme = value);
+                  ref.read(roomServiceProvider).updateWordPack(
+                        widget.roomCode,
+                        locale: _selectedLocale,
+                        theme: value,
+                      );
+                },
+              ),
+            ] else
+              Text('${_selectedLocale.toUpperCase()} · $_selectedTheme'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameModePicker() {
+    return Semantics(
+      container: true,
+      label: 'Mode de jeu',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            const Expanded(child: Text('Mode', style: TextStyle(fontWeight: FontWeight.bold))),
+            if (widget.isHost)
+              DropdownButton<String>(
+                value: _selectedMode,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: 'classic', child: Text('Classique')),
+                  DropdownMenuItem(value: 'blitz', child: Text('Blitz · 30s')),
+                  DropdownMenuItem(value: 'cooperative', child: Text('Coopératif')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedMode = value);
+                  ref.read(roomServiceProvider).updateGameMode(widget.roomCode, value);
+                },
+              )
+            else
+              Text(_selectedMode),
+          ],
         ),
       ),
     );

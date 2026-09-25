@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/user_model.dart';
+import '../../core/providers/service_providers.dart';
 import '../../data/services/social_service.dart';
+import '../../data/services/season_service.dart';
 
-class LeaderboardScreen extends StatefulWidget {
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTickerProviderStateMixin {
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final SocialService _socialService = SocialService();
+  SocialService get _socialService => ref.read(socialServiceProvider);
+  SeasonService get _seasonService => ref.read(seasonServiceProvider);
   final String _myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -35,6 +39,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           tabs: const [
             Tab(text: 'MONDIAL'),
             Tab(text: 'AMIS'),
+            Tab(text: 'SAISON'),
           ],
         ),
       ),
@@ -43,8 +48,35 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         children: [
           _buildWorldLeaderboard(),
           _buildFriendsLeaderboard(),
+          _buildSeasonLeaderboard(),
         ],
       ),
+    );
+  }
+
+  Widget _buildSeasonLeaderboard() {
+    final seasonId = _seasonService.currentSeasonId;
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _seasonService.leaderboard(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final entries = snapshot.data!.docs;
+        if (entries.isEmpty) return const Center(child: Text('La saison commence bientôt.'));
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final data = entries[index].data();
+            final scores = Map<String, dynamic>.from(data['seasonScores'] ?? {});
+            final score = scores[seasonId] ?? 0;
+            return ListTile(
+              leading: Text('#${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(data['pseudo'] ?? 'Joueur'),
+              trailing: Text('$score PTS', style: const TextStyle(color: Color(0xFFFFB300), fontWeight: FontWeight.bold)),
+            );
+          },
+        );
+      },
     );
   }
 

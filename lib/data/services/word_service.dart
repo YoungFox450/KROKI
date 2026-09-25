@@ -1,54 +1,28 @@
 import 'dart:math';
 
+/// Packs de mots séparés de la logique de partie.
 class WordService {
-  static final List<String> _words = [
-    // Animaux & Personnages marrants
-    'CANARD EN PLASTIQUE',
-    'LICORNE',
-    'DINOSAURE',
-    'MARMOTTE',
-    'LAMA',
-    'ZOMBIE',
-    'VAMPIRE',
-    'FANTÔME',
-    'EXTRATERRESTRE',
-    'NINJA',
-    'PENGOUIN',
-    'PIEUVRE',
-    'POUSSIN',
-    'PIRATE',
+  static const supportedLocales = <String>['fr', 'ln'];
+  static const supportedThemes = <String>['mix', 'kin', 'animaux', 'objets', 'community'];
 
-    // Nourriture & Objets simples/rigolos
-    'BANANE',
-    'PATATE',
-    'PIZZA',
-    'DONUT',
-    'POPCORN',
-    'TACO',
-    'SAUCISSE',
-    'ANANAS',
-    'CACTUS',
-    'SLIP',
-    'CHAUSSETTE TROUÉE',
-    'CROTTE',
-    'GLACE AU CHOCOLAT',
-    'CHAMPIGNON',
+  static final Map<String, Map<String, List<String>>> _packs = {
+    'fr': {
+      'animaux': ['CANARD', 'LICORNE', 'DINOSAURE', 'MARMOTTE', 'LAMA', 'PENGUIN', 'PIEUVRE'],
+      'objets': ['BANANE', 'PATATE', 'PIZZA', 'CACTUS', 'CHAUSSETTE', 'LUNETTES DE SOLEIL', 'AVION DE PAPIER'],
+      'kin': ['MARCHÉ', 'TAXI JAUNE', 'SAPO', 'RUMBA', 'FOUFOU', 'MALWA', 'PARCELLE'],
+    },
+    'ln': {
+      'animaux': ['MBWA', 'NTABA', 'NGANDO', 'NDOKI'],
+      'objets': ['MOTO', 'MBONGO', 'BALLE', 'LIBANGA'],
+      'kin': ['TAXI JAUNE', 'MARCHÉ', 'SAPO', 'RUMBA', 'MALWA', 'PARCELLE'],
+    },
+  };
 
-    // Éléments du quotidien & Symboles faciles
-    'SUPER HÉROS',
-    'ROBOT',
-    'SQUELETTE',
-    'VOLCAN',
-    'AVION DE PAPIER',
-    'CHAPEAU MAGIQUE',
-    'LUNETTES DE SOLEIL',
-    'DENT',
-    'AMPOULE',
-    'SOLEIL AVEC LUNETTES',
-  ];
-
-  static String getRandomWord() {
-    final random = Random();
-    return _words[random.nextInt(_words.length)];
+  static String getRandomWord({String locale = 'fr', String theme = 'mix'}) {
+    final languagePack = _packs[locale] ?? _packs['fr']!;
+    final words = theme == 'mix'
+        ? languagePack.values.expand((pack) => pack).toList()
+        : (languagePack[theme] ?? languagePack['kin'] ?? languagePack.values.first);
+    return words[Random().nextInt(words.length)].toUpperCase();
   }
 }

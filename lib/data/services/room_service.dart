@@ -2,9 +2,11 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/room_model.dart';
 import 'word_service.dart';
+import 'community_word_service.dart';
 
 class RoomService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final CommunityWordService _communityWords = CommunityWordService();
 
   // Génère un code de 4 lettres aléatoires
   String _generateRoomCode() {
@@ -19,6 +21,9 @@ class RoomService {
   Future<String?> createRoom({
     required String hostUid,
     required String hostPseudo,
+    String wordLocale = 'fr',
+    String wordTheme = 'mix',
+    String gameMode = 'classic',
   }) async {
     try {
       String code = _generateRoomCode();
@@ -26,6 +31,9 @@ class RoomService {
       RoomModel room = RoomModel(
         code: code,
         hostId: hostUid,
+        wordLocale: wordLocale,
+        wordTheme: wordTheme,
+        gameMode: gameMode,
       );
 
       // 1. Créer le document de la salle
@@ -98,11 +106,12 @@ class RoomService {
     await _firestore.collection('rooms').doc(roomCode).update({
       'status': 'intermission', // Phase de préparation avant la manche 1
       'cooldownLeft': 30,       // 30 secondes de cooldown avant la 1ère manche
-      'currentWord': WordService.getRandomWord().toUpperCase(),
+      'currentWord': await _wordForRoom(data),
       'drawerUid': hostId,
       'currentTurn': 1,
       'currentRound': 1,
-      'timeLeft': 60,
+      'timeLeft': (data['gameMode'] ?? 'classic') == 'blitz' ? 30 : 60,
+      'gameMode': data['gameMode'] ?? 'classic',
       'guessedPlayers': [],
       'maxRounds': maxRounds,
     });
@@ -113,5 +122,25 @@ class RoomService {
     await _firestore.collection('rooms').doc(roomCode).update({
       'maxRounds': maxRounds,
     });
+  }
+
+  Future<void> updateWordPack(String roomCode, {required String locale, required String theme}) async {
+    await _firestore.collection('rooms').doc(roomCode).update({
+      'wordLocale': locale,
+      'wordTheme': theme,
+    });
+  }
+
+  Future<void> updateGameMode(String roomCode, String mode) async {
+    if (!const {'classic', 'blitz', 'cooperative'}.contains(mode)) return;
+    await _firestore.collection('rooms').doc(roomCode).update({'gameMode': mode});
+  }
+
+  Future<String> _wordForRoom(Map<String, dynamic> data) async {
+    if (data['wordTheme'] == 'community') {
+      final word = await _communityWords.randomWord(locale: data['wordLocale'] ?? 'fr');
+      if (word != null) return word;
+    }
+    return WordService.getRandomWord(locale: data['wordLocale'] ?? 'fr', theme: data['wordTheme'] ?? 'mix');
   }
 }

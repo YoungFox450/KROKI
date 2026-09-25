@@ -7,6 +7,7 @@ class DrawingCanvas extends StatefulWidget {
   final Function(DrawingStroke)? onStrokeCompleted;
   final Color selectedColor;
   final double selectedWidth;
+  final bool isEraser;
 
   const DrawingCanvas({
     super.key,
@@ -15,6 +16,7 @@ class DrawingCanvas extends StatefulWidget {
     this.onStrokeCompleted,
     this.selectedColor = Colors.white,
     this.selectedWidth = 4.0,
+    this.isEraser = false,
   });
 
   @override
@@ -26,8 +28,12 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanStart: widget.isDrawer
+    return Semantics(
+      container: true,
+      label: widget.isDrawer ? 'Zone de dessin active' : 'Dessin des autres joueurs',
+      hint: widget.isDrawer ? 'Faites glisser votre doigt pour dessiner' : 'Lecture seule',
+      child: GestureDetector(
+        onPanStart: widget.isDrawer
           ? (details) {
               setState(() {
                 currentPoints = [
@@ -39,7 +45,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
               });
             }
           : null,
-      onPanUpdate: widget.isDrawer
+        onPanUpdate: widget.isDrawer
           ? (details) {
               setState(() {
                 currentPoints.add(
@@ -51,27 +57,30 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
               });
             }
           : null,
-      onPanEnd: widget.isDrawer
+        onPanEnd: widget.isDrawer
           ? (details) {
               if (currentPoints.isNotEmpty) {
                 final stroke = DrawingStroke(
                   points: List.from(currentPoints),
                   colorHex: widget.selectedColor.value,
                   strokeWidth: widget.selectedWidth,
+                  isEraser: widget.isEraser,
                 );
                 widget.onStrokeCompleted?.call(stroke);
                 setState(() => currentPoints.clear());
               }
             }
           : null,
-      child: CustomPaint(
-        painter: CanvasPainter(
-          strokes: widget.strokes,
-          currentPoints: currentPoints,
-          currentColor: widget.selectedColor,
-          currentWidth: widget.selectedWidth,
+        child: CustomPaint(
+          painter: CanvasPainter(
+            strokes: widget.strokes,
+            currentPoints: currentPoints,
+            currentColor: widget.selectedColor,
+            currentWidth: widget.selectedWidth,
+            currentIsEraser: widget.isEraser,
+          ),
+          size: Size.infinite,
         ),
-        size: Size.infinite,
       ),
     );
   }
@@ -82,16 +91,19 @@ class CanvasPainter extends CustomPainter {
   final List<DrawingPoint> currentPoints;
   final Color currentColor;
   final double currentWidth;
+  final bool currentIsEraser;
 
   CanvasPainter({
     required this.strokes,
     required this.currentPoints,
     required this.currentColor,
     required this.currentWidth,
+    required this.currentIsEraser,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.saveLayer(Offset.zero & size, Paint());
     // Dessiner les traits validés reçus du serveur
     for (var stroke in strokes) {
       final paint = Paint()
@@ -99,6 +111,7 @@ class CanvasPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..strokeWidth = stroke.strokeWidth;
+      if (stroke.isEraser) paint.blendMode = BlendMode.clear;
 
       for (int i = 0; i < stroke.points.length - 1; i++) {
         canvas.drawLine(
@@ -116,6 +129,7 @@ class CanvasPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..strokeWidth = currentWidth;
+      if (currentIsEraser) paint.blendMode = BlendMode.clear;
 
       for (int i = 0; i < currentPoints.length - 1; i++) {
         canvas.drawLine(
@@ -125,6 +139,7 @@ class CanvasPainter extends CustomPainter {
         );
       }
     }
+    canvas.restore();
   }
 
   @override

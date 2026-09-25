@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/user_model.dart';
+import '../../core/providers/service_providers.dart';
 import '../../data/services/social_service.dart';
-import 'private_chat_screen.dart';
 
-class SocialScreen extends StatefulWidget {
+class SocialScreen extends ConsumerStatefulWidget {
   const SocialScreen({super.key});
 
   @override
   State<SocialScreen> createState() => _SocialScreenState();
 }
 
-class _SocialScreenState extends State<SocialScreen> {
-  final SocialService _socialService = SocialService();
+class _SocialScreenState extends ConsumerState<SocialScreen> {
+  SocialService get _socialService => ref.read(socialServiceProvider);
   final TextEditingController _searchController = TextEditingController();
   List<UserModel> _searchResults = [];
   bool _isSearching = false;
@@ -196,7 +198,7 @@ class _SocialScreenState extends State<SocialScreen> {
                     borderRadius: BorderRadius.circular(20),
                     clipBehavior: Clip.antiAlias,
                     child: ListTile(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PrivateChatScreen(friend: friend))),
+                      onTap: () => context.push('/chat', extra: friend),
                       leading: Stack(
                         children: [
                           CircleAvatar(backgroundColor: const Color(0xFF7C4DFF).withOpacity(0.1), child: Text(friend.pseudo[0].toUpperCase(), style: const TextStyle(color: Color(0xFF7C4DFF)))),
@@ -242,7 +244,24 @@ class _SocialScreenState extends State<SocialScreen> {
                   leading: CircleAvatar(backgroundColor: const Color(0xFF7C4DFF).withOpacity(0.1), child: Text(friend.pseudo[0].toUpperCase(), style: const TextStyle(color: Color(0xFF7C4DFF)))),
                   title: Text(friend.pseudo, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(friend.isOnline ? 'En ligne' : 'Hors ligne', style: TextStyle(color: friend.isOnline ? Colors.greenAccent : Colors.white38, fontSize: 11)),
-                  trailing: IconButton(icon: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF7C4DFF)), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PrivateChatScreen(friend: friend)))),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Signaler ce joueur',
+                        icon: const Icon(Icons.flag_outlined, color: Colors.orangeAccent),
+                        onPressed: () => ref.read(moderationServiceProvider).reportPlayer(
+                              playerUid: friend.uid,
+                              reason: 'Signalement depuis la liste d’amis',
+                            ),
+                      ),
+                      IconButton(
+                        tooltip: 'Ouvrir le chat',
+                        icon: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF7C4DFF)),
+                        onPressed: () => context.push('/chat', extra: friend),
+                      ),
+                    ],
+                  )),
                 ),
               ),
             );

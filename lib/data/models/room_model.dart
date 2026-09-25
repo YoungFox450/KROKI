@@ -38,6 +38,9 @@ class RoomModel {
   final int maxRounds;
   final String? currentWord;
   final String? drawerUid;
+  final String wordLocale;
+  final String wordTheme;
+  final String gameMode;
 
   RoomModel({
     required this.code,
@@ -47,6 +50,9 @@ class RoomModel {
     this.maxRounds = 3,
     this.currentWord,
     this.drawerUid,
+    this.wordLocale = 'fr',
+    this.wordTheme = 'mix',
+    this.gameMode = 'classic',
   });
 
   Map<String, dynamic> toMap() {
@@ -58,6 +64,9 @@ class RoomModel {
       'maxRounds': maxRounds,
       'currentWord': currentWord,
       'drawerUid': drawerUid,
+      'wordLocale': wordLocale,
+      'wordTheme': wordTheme,
+      'gameMode': gameMode,
     };
   }
 
@@ -70,6 +79,9 @@ class RoomModel {
       maxRounds: map['maxRounds'] ?? 3,
       currentWord: map['currentWord'],
       drawerUid: map['drawerUid'],
+      wordLocale: map['wordLocale'] ?? 'fr',
+      wordTheme: map['wordTheme'] ?? 'mix',
+      gameMode: map['gameMode'] ?? 'classic',
     );
   }
 }

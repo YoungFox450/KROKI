@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../data/services/auth_service.dart';
-import 'register_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/providers/service_providers.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
 
   void _login() async {
@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-    String? error = await _authService.loginWithEmail(
+    String? error = await ref.read(authServiceProvider).loginWithEmail(
       email: _emailController.text,
       password: _passwordController.text,
     );
@@ -105,10 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                      );
+                      context.push('/register');
                     },
                     child: RichText(
                       text: TextSpan(

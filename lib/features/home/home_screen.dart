@@ -1,48 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/user_model.dart';
-import '../../data/services/room_service.dart';
-import '../../data/services/social_service.dart';
-import '../lobby/lobby_screen.dart';
-import '../leaderboard/leaderboard_screen.dart';
-import '../social/social_screen.dart';
-import '../profile/profile_screen.dart';
-import '../settings/settings_screen.dart';
+import '../../data/models/weekly_challenge.dart';
+import '../../core/providers/service_providers.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   final _roomCodeController = TextEditingController();
-  final _roomService = RoomService();
-  final SocialService _socialService = SocialService();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _socialService.setupPresence();
+    ref.read(socialServiceProvider).setupPresence();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _socialService.updatePresence(false);
+    ref.read(socialServiceProvider).updatePresence(false);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _socialService.updatePresence(true);
+      ref.read(socialServiceProvider).updatePresence(true);
     } else {
-      _socialService.updatePresence(false);
+      ref.read(socialServiceProvider).updatePresence(false);
     }
   }
 
@@ -57,19 +52,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _createRoom(UserModel user) async {
     setState(() => _isLoading = true);
-    String? roomCode = await _roomService.createRoom(
+    String? roomCode = await ref.read(roomServiceProvider).createRoom(
       hostUid: user.uid,
       hostPseudo: user.pseudo,
     );
     setState(() => _isLoading = false);
 
     if (roomCode != null && mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LobbyScreen(roomCode: roomCode, isHost: true),
-        ),
-      );
+      context.push('/lobby/$roomCode?host=true');
     }
   }
 
@@ -86,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     setState(() => _isLoading = true);
-    String? error = await _roomService.joinRoom(
+    String? error = await ref.read(roomServiceProvider).joinRoom(
       roomCode: code,
       uid: user.uid,
       pseudo: user.pseudo,
@@ -94,12 +84,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() => _isLoading = false);
 
     if (error == null && mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LobbyScreen(roomCode: code, isHost: false),
-        ),
-      );
+      context.push('/lobby/$code');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -153,12 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => ProfileScreen(user: user)),
-                              );
-                            },
+                            onTap: () => context.push('/profile', extra: user),
                             child: Row(
                               children: [
                                 CircleAvatar(
@@ -185,12 +165,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             ),
                           ),
                           IconButton.filledTonal(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                              );
-                            },
+                            onPressed: () => context.push('/settings'),
                             icon: const Icon(Icons.settings_rounded),
                           ),
                         ],
@@ -234,6 +209,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
                       const SizedBox(height: 40),
+                      ref.watch(weeklyChallengeProvider).when(
+                        loading: () => const SizedBox(height: 8),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (status) => _buildWeeklyChallenge(status),
+                      ),
+                      const SizedBox(height: 24),
                       Text(
                         'PRÊT À JOUER ?',
                         style: TextStyle(
@@ -247,6 +228,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         child: SingleChildScrollView(
                           child: Column(
                             children: [
+                              _buildMenuCard(
+                                context,
+                                title: 'Entraînement solo',
+                                subtitle: 'Dessine sans attendre d’autres joueurs',
+                                icon: Icons.auto_awesome,
+                                color: Colors.cyanAccent,
+                                onTap: () => context.push('/solo'),
+                              ),
+                              const SizedBox(height: 16),
                               _buildMenuCard(
                                 context,
                                 title: 'Créer un salon',
@@ -332,12 +322,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 subtitle: 'Gérez vos contacts et discutez',
                                 icon: Icons.people_alt_rounded,
                                 color: Colors.lightBlueAccent,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const SocialScreen()),
-                                  );
-                                },
+                                onTap: () => context.push('/social'),
                               ),
                               const SizedBox(height: 16),
                               _buildMenuCard(
@@ -346,12 +331,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 subtitle: 'Découvrez les meilleurs dessinateurs',
                                 icon: Icons.leaderboard_rounded,
                                 color: Colors.amberAccent,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-                                  );
-                                },
+                                onTap: () => context.push('/leaderboard'),
                               ),
                               const SizedBox(height: 30),
                             ],
@@ -366,6 +346,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildWeeklyChallenge(WeeklyChallengeStatus status) {
+    return Semantics(
+      container: true,
+      label: 'Défi hebdomadaire ${status.challenge.title}',
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFB300).withOpacity(0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFFB300).withOpacity(0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.emoji_events_outlined, color: Color(0xFFFFB300)),
+                const SizedBox(width: 8),
+                Text(status.challenge.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                const Spacer(),
+                Text('${status.progress}/${status.challenge.target}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(status.challenge.description, style: TextStyle(color: Colors.white.withOpacity(0.7))),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(value: status.ratio, minHeight: 7, borderRadius: BorderRadius.circular(8)),
+          ],
+        ),
+      ),
     );
   }
 
