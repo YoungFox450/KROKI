@@ -15,10 +15,10 @@ class GameLogicService {
   Timer? _timer;
 
   GameLogicService({
-    required DrawingService drawingService,
+    DrawingService? drawingService,
     SeasonService? seasonService,
     CommunityWordService? communityWords,
-  })  : _drawingService = drawingService,
+  })  : _drawingService = drawingService ?? DrawingService(),
         _seasonService = seasonService ?? SeasonService(),
         _communityWords = communityWords ?? CommunityWordService();
 
@@ -77,7 +77,7 @@ class GameLogicService {
   }) async {
     final roomRef = _firestore.collection('rooms').doc(roomCode);
     final roomSnap = await roomRef.get();
-    final roomData = roomSnap.data() ?? <String, dynamic>{};
+    final roomData = (roomSnap.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
     final roundDuration = roomData['gameMode'] == 'blitz' ? 30 : 60;
     int secondsElapsed = (roundDuration - timeLeft).clamp(0, roundDuration).toInt();
     int intervalsPassed = secondsElapsed ~/ 8;
@@ -138,11 +138,11 @@ class GameLogicService {
 
   // Démarrer la phase de pause (15 secondes)
   Future<void> startIntermission(String roomCode) async {
-    var roomRef = _firestore.collection('rooms').doc(roomCode);
-    var roomSnap = await roomRef.get();
+    final roomRef = _firestore.collection('rooms').doc(roomCode);
+    final roomSnap = await roomRef.get();
     if (!roomSnap.exists) return;
 
-    var roomData = roomSnap.data()!;
+    final roomData = roomSnap.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     int currentTurn = (roomData['currentTurn'] ?? 1) + 1;
     int maxRounds = roomData['maxRounds'] ?? 3;
 
@@ -199,16 +199,17 @@ class GameLogicService {
   // Démarrer un tour de jeu (60 secondes ou 30s en mode Blitz)
   Future<void> startRound(String roomCode) async {
     await _drawingService.clearCanvas(roomCode);
-    var roomRef = _firestore.collection('rooms').doc(roomCode);
-    var roomSnap = await roomRef.get();
-    var roomData = roomSnap.data() ?? <String, dynamic>{};
-    final gameDuration = (roomData['gameMode'] ?? 'classic') == 'blitz' ? 30 : 60;
+    final roomRef = _firestore.collection('rooms').doc(roomCode);
+    final roomSnap = await roomRef.get();
+    final Map<String, dynamic> data = roomSnap.data() ?? {};
+    final String mode = data['gameMode'] as String? ?? 'classic';
+    final int gameDuration = mode == 'blitz' ? 30 : 60;
     await roomRef.update({
       'status': 'active',
       'timeLeft': gameDuration,
     });
 
-    if (FirebaseAuth.instance.currentUser?.uid == roomData['hostId']) {
+    if (FirebaseAuth.instance.currentUser?.uid == data['hostId']) {
       startTimer(roomCode);
     }
   }

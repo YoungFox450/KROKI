@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "strokes": {
+      "$roomCode": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$strokeId": {
+          ".validate": "newData.hasChildren(['points', 'color', 'width', 'eraser'])"
+        }
+      }
+    },
+    "chats": {
+      "$roomCode": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

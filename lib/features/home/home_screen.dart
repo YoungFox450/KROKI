@@ -11,7 +11,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
@@ -211,7 +211,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       const SizedBox(height: 40),
                       ref.watch(weeklyChallengeProvider).when(
                         loading: () => const SizedBox(height: 8),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (err, stack) => const SizedBox.shrink(),
                         data: (status) => _buildWeeklyChallenge(status),
                       ),
                       const SizedBox(height: 24),
@@ -258,8 +258,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                                     const Row(
                                       children: [
                                         Icon(Icons.vpn_key_outlined, color: Colors.amberAccent),
-                                        const SizedBox(width: 12),
-                                        const Text(
+                                        SizedBox(width: 12),
+                                        Text(
                                           'Rejoindre un salon',
                                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                         ),

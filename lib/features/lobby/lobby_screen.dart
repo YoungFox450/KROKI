@@ -16,7 +16,7 @@ class LobbyScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  State<LobbyScreen> createState() => _LobbyScreenState();
+  _LobbyScreenState createState() => _LobbyScreenState();
 }
 
 class _LobbyScreenState extends ConsumerState<LobbyScreen> {
@@ -273,8 +273,10 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                 items: const [
                   DropdownMenuItem(value: 'mix', child: Text('Mix')),
                   DropdownMenuItem(value: 'kin', child: Text('Kinshasa')),
+                  DropdownMenuItem(value: 'lingala', child: Text('Lingala')),
                   DropdownMenuItem(value: 'animaux', child: Text('Animaux')),
                   DropdownMenuItem(value: 'objets', child: Text('Objets')),
+                  DropdownMenuItem(value: 'musique', child: Text('Musique')),
                   DropdownMenuItem(value: 'community', child: Text('Communauté')),
                 ],
                 onChanged: (value) {
