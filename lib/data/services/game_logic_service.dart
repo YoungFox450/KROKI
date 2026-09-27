@@ -77,7 +77,7 @@ class GameLogicService {
   }) async {
     final roomRef = _firestore.collection('rooms').doc(roomCode);
     final roomSnap = await roomRef.get();
-    final roomData = (roomSnap.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
+    final roomData = roomSnap.data() ?? <String, dynamic>{};
     final roundDuration = roomData['gameMode'] == 'blitz' ? 30 : 60;
     int secondsElapsed = (roundDuration - timeLeft).clamp(0, roundDuration).toInt();
     int intervalsPassed = secondsElapsed ~/ 8;
@@ -142,7 +142,7 @@ class GameLogicService {
     final roomSnap = await roomRef.get();
     if (!roomSnap.exists) return;
 
-    final roomData = roomSnap.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+    final roomData = roomSnap.data() ?? <String, dynamic>{};
     int currentTurn = (roomData['currentTurn'] ?? 1) + 1;
     int maxRounds = roomData['maxRounds'] ?? 3;
 

@@ -26,7 +26,7 @@ class GameScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  State<GameScreen> createState() => _GameScreenState();
+  ConsumerState<GameScreen> createState() => _GameScreenState();
 }
 
 enum HapticType { selection, light, medium, heavy }

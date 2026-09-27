@@ -11,7 +11,7 @@ class SocialScreen extends ConsumerStatefulWidget {
   const SocialScreen({super.key});
 
   @override
-  State<SocialScreen> createState() => _SocialScreenState();
+  ConsumerState<SocialScreen> createState() => _SocialScreenState();
 }
 
 class _SocialScreenState extends ConsumerState<SocialScreen> {
@@ -261,7 +261,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                         onPressed: () => context.push('/chat', extra: friend),
                       ),
                     ],
-                  )),
+                  ),
                 ),
               ),
             );
